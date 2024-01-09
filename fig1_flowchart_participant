@@ -1,0 +1,55 @@
+*calculating eligible/identified subject
+tabulate eligible subject_cat, m col
+
+*reason for not eligible (hc) based on age
+generate age_cat_eli=.
+replace age_cat_eli=1 if (age>=10)
+replace age_cat_eli=0 if (age<10)
+tabulate eligible age_cat_eli if subject_cat==2
+list subject_id refuse_reason if eligible==0 & age_cat_eli==1 & subject_cat==2
+// terdapat 6 HC yang eligible dari segi umur tapi tidak dianggap tidak eligible
+// yaitu 5 kontak serumah index 25000601 (Pa Wasri)
+// dan 1 kontak serumah index 25013701 (Hara)
+// Tidak dimasukkan ke dalam flowchart
+// Jadi dihapus sejak awal. mulai dari identified (738-6=732), eligible (592-6=586)kurangi 6
+
+*reason for not eligible (nc) based on age
+tabulate eligible age_cat_eli if subject_cat==3
+// 969 tidak eligible karena umur < 10 tahun
+list subject_id if eligible==0 & age_cat_eli==1 & subject_cat==3
+// ada 4 NC yang eligible dari segi umur, tp tidak eligible, yaitu:
+// 25039704 | umur 9
+// 25083201 | tidak dianggap subjek karena hasil jemput bola (id 25083201), bta dan kultur negatif
+// 25163102 | cimahi (not normally living in the hosuehold)
+// 25165703 | pesantren (not normally living in the hosuehold)
+// berarti kurangi satu mulai dari identified (6705-1=6704), not eligible (972-1=971)
+
+drop if eligible==0
+
+*reason if not screened
+tabulate consent subject_cat, m col
+tabulate refuse_reason consent if subject_cat==2, m col
+browse subject_id refuse_reason if consent==0 & subject_cat==2
+leftalign
+tabulate refuse_reason consent if subject_cat==3, m col
+browse subject_id refuse_reason if consent==0 & subject_cat==3
+leftalign
+*refuse_reason category
+generate refusereason=.
+label define refuselab 1 "No consent" 2 "Unable to be contacted"
+label list
+label value refusereason refuselab
+replace refusereason=1 if refuse_reason=="Sekolah dan tidak ada gejala" | refuse_reason=="Pengidap cerebral palsi" | refuse_reason=="Malu ditanya-tanya oleh orang lain" | refuse_reason=="bekerja" | refuse_reason=="sibuk bekerja" | refuse_reason=="Sibuk sekolah" | refuse_reason=="Bekerja" | refuse_reason=="Kerja" | refuse_reason=="Sekolah" | refuse_reason=="Sibuk kerja" | refuse_reason=="Sibuk kuliah" | refuse_reason=="Sibuk" | refuse_reason=="Sibuk bekerja" | refuse_reason=="Sibuk Bekerja" | refuse_reason=="bekerja" | refuse_reason=="sibuk bekerja" | refuse_reason=="Sibuk kuliah" | refuse_reason=="Post OP TB tulang-tidak bisa mobilisasi" | refuse_reason=="Tidak mau wawancara karena sibuk bekerja" | refuse_reason=="Tidak diizinkan orang tua menunggu orangtuanya diperiksa" | refuse_reason=="Trauma pergi ke RS" | refuse_reason=="ODGJ" | refuse_reason=="Memiliki kelatarbelakangan mental" | refuse_reason=="Tidak bisa berjalan" | refuse_reason=="Susah jalan" | refuse_reason=="Tidak ingin diwawancara" | refuse_reason=="Tidak mau diwawancara" | refuse_reason=="Tidak mau" | refuse_reason=="tidak mau karena sibuk bekerja" | refuse_reason=="Tidak ingin diperiksa" | refuse_reason=="Sehat" | refuse_reason=="merasa sehat" | refuse_reason=="Lansia" | refuse_reason=="Stroke" | refuse_reason=="Main" | refuse_reason=="Sedang bermain" | refuse_reason=="Sedang bermain, tidak ingin diwawancara" | refuse_reason=="Sakit Stroke" | refuse_reason=="Tidak ada waktu luang" | refuse_reason=="Takut dengan hasil pemeriksaan" | refuse_reason=="Tidak bersedia"| refuse_reason=="Takut diperiksa" | refuse_reason=="Tidak ada gejala" | refuse_reason=="Tidak bergejala" | refuse_reason=="Tidak ada waktu" | refuse_reason=="Sakit punggung" | refuse_reason=="Sakit Jantung" | refuse_reason=="Sakit stroke" | refuse_reason=="Merasa sehat dan tidak bergejala" | refuse_reason=="Merasa sehat dan tidak ingin diperiksa" | refuse_reason=="Sedang Hamil"| refuse_reason=="Sakit berat" | refuse_reason=="Sedang hamil" | refuse_reason=="Malas" | refuse_reason=="Sakit" | refuse_reason=="Merasa sehat" | refuse_reason=="Takut" | refuse_reason=="Takut di skrining" | refuse_reason=="Baru di rontgen" | refuse_reason=="Baru kecelakaan motor" | refuse_reason=="Baru selesai rontgen minggu lalu" | refuse_reason=="Disabilitas" | refuse_reason=="Hamil" | refuse_reason=="Hamil muda"
+replace refusereason=2 if refuse_reason=="Jarang ada di rumah" | refuse_reason=="Jarang ada dirumah" | refuse_reason=="Sudah pindah rumah" | refuse_reason=="Sedang diluar kota" | refuse_reason=="Sedang berada diluar rumah" | refuse_reason=="jarang di rumah" | refuse_reason=="Tidak ada respon" | refuse_reason=="Pesantren" | refuse_reason=="Jarang di rumah" | refuse_reason=="Jarang dirumah"
+gsort refusereason
+rightalign refusereason
+tabulate refusereason consent if subject_cat==2, m col
+tabulate refusereason consent if subject_cat==3, m col
+tabulate refusereason subject_cat if consent==0, m col
+
+*generating new variable: tb positive or tb negative
+generate tb_case=.
+replace tb_case=1 if case_category==1 | case_category==2
+replace tb_case=0 if case_category==0 | case_category==3 | case_category==4
+codebook tb_case
+tabulate subject_cat tb_case if consent==1
